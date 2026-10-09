@@ -1,0 +1,76 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '@fontsource/newsreader/latin-400.css';
+import '@fontsource/newsreader/latin-ext-400.css';
+import '@fontsource/newsreader/latin-400-italic.css';
+import '@fontsource/newsreader/latin-ext-400-italic.css';
+import '@fontsource/instrument-sans/latin-400.css';
+import '@fontsource/instrument-sans/latin-ext-400.css';
+import '@fontsource/instrument-sans/latin-500.css';
+import '@fontsource/instrument-sans/latin-ext-500.css';
+import '@fontsource/instrument-sans/latin-600.css';
+import '@fontsource/instrument-sans/latin-ext-600.css';
+import '@fontsource/commit-mono/400.css';
+import '../styles/global.css';
+import Navigation from '../components/Navigation.astro';
+import { getModel } from '../lib/content';
+import { languages, otherLang, t, type Lang } from '../lib/i18n';
+import { absoluteUrl, withBase } from '../lib/urls';
+interface Props { lang: Lang; title: string; description?: string; path: string; alternates?: Partial<Record<Lang, string>>; translationMissing?: boolean; translationUnavailable?: boolean; }
+const { lang, title, description = t(lang).siteDescription, path, alternates = {}, translationMissing = false, translationUnavailable = false } = Astro.props;
+const model = await getModel();
+const text = t(lang);
+const site = Astro.site!.origin;
+const canonical = absoluteUrl(path, site);
+const target = otherLang(lang);
+const missing = translationUnavailable && !alternates[target];
+const targetPath = alternates[target] ?? `/${target}/${missing ? '?translation=missing#translation-missing' : ''}`;
+const readingAnimation = {
+  old: { name: 'page-leave', duration: '120ms', easing: 'cubic-bezier(.165,.84,.44,1)', fillMode: 'both' },
+  new: { name: 'page-enter', duration: '240ms', easing: 'cubic-bezier(.22,1,.36,1)', fillMode: 'both' },
+};
+const readingTransition = { forwards: readingAnimation, backwards: readingAnimation };
+---
+<!doctype html>
+<html lang={lang} data-theme="dark" transition:animate="none">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>{title === "Arda's Blog" ? title : `${title} — Arda's Blog`}</title>
+  <meta name="description" content={description}/><link rel="canonical" href={canonical}/>
+  {languages.map((language) => alternates[language] && <link rel="alternate" hreflang={language} href={absoluteUrl(alternates[language]!, site)}/>)}
+  {path === `/${lang}/` && <link rel="alternate" hreflang="x-default" href={absoluteUrl('/', site)}/>}
+  <link rel="alternate" type="application/rss+xml" title={`${text.rss} — Arda's Blog`} href={withBase(`/${lang}/rss.xml`)}/>
+  <meta property="og:type" content="website"/><meta property="og:site_name" content="Arda's Blog"/><meta property="og:title" content={title}/><meta property="og:description" content={description}/><meta property="og:url" content={canonical}/><meta property="og:locale" content={lang === 'tr' ? 'tr_TR' : 'en_US'}/>
+  {alternates[target] && <meta property="og:locale:alternate" content={target === 'tr' ? 'tr_TR' : 'en_US'}/>}
+  <meta name="twitter:card" content="summary"/>
+  <script is:inline>
+    (() => { let theme; try { theme = localStorage.getItem('blog-theme'); } catch { /* Storage can be unavailable; use system preference. */ } document.documentElement.dataset.theme = theme === 'light' || theme === 'dark' ? theme : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'; })();
+  </script>
+  <ClientRouter />
+</head>
+<body data-copy={text.copy} data-copied={text.copied} data-copy-failed={text.copyFailed}>
+  <a class="skip-link" href="#main">{text.skip}</a>
+  <aside class="desktop-sidebar" transition:name="sidebar" transition:animate="none"><Navigation lang={lang} model={model} path={path}/></aside>
+  <div class="site-content">
+    <header class="topbar" transition:name="topbar" transition:animate="none">
+      <button type="button" class="mobile-menu btn" data-open-menu aria-label={text.menu} aria-controls="mobile-navigation" hidden><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>{text.menu}</button>
+      <form class="topbar-search" role="search" action={withBase(`/${lang}/search/`)} method="get">
+        <label class="sr-only" for="search-query">{text.search}</label>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+        <input id="search-query" name="q" type="search" data-search-input data-index={withBase(`/${lang}/search-index.json`)} placeholder={text.searchPlaceholder} autocomplete="off" aria-describedby={path === `/${lang}/search/` ? 'search-status' : undefined}/>
+        <button type="button" class="search-shortcut" data-focus-search aria-label={text.search} hidden><kbd data-search-shortcut>Ctrl K</kbd></button>
+      </form>
+      <div class="preferences"><nav class="language-control" data-active-language={lang} aria-label={lang === 'tr' ? 'Dil' : 'Language'}>{languages.map((language) => <a href={withBase(language === lang ? path : targetPath)} lang={language} hreflang={language} data-language={language} data-astro-prefetch aria-current={language === lang ? 'true' : undefined}>{language.toUpperCase()}</a>)}</nav><div class="theme-control" hidden><span>{text.theme}</span><select aria-label={text.theme} data-theme-select><option value="system">{lang === 'tr' ? 'Sistem' : 'System'}</option><option value="dark">{lang === 'tr' ? 'Koyu' : 'Dark'}</option><option value="light">{lang === 'tr' ? 'Açık' : 'Light'}</option></select><button type="button" class="btn theme-trigger" data-theme-trigger aria-label={text.theme} aria-expanded="false" aria-controls="theme-options" hidden><span data-theme-label></span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 9 6 6 6-6"/></svg></button><div id="theme-options" class="theme-options" popover="auto" role="group" aria-label={text.theme}>{(['system', 'dark', 'light'] as const).map((value) => <button type="button" class="theme-option" data-theme-option={value} aria-pressed="false"><span>{value === 'system' ? (lang === 'tr' ? 'Sistem' : 'System') : value === 'dark' ? (lang === 'tr' ? 'Koyu' : 'Dark') : (lang === 'tr' ? 'Açık' : 'Light')}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m5 12 4 4L19 6"/></svg></button>)}</div></div></div>
+    </header>
+    {missing && path !== '/' && <p class="translation-hint">{text.missingTranslation} <span>{lang === 'tr' ? 'Dil bağlantısı ana sayfaya gider.' : 'The language link opens the home page.'}</span></p>}
+    <details class="mobile-fallback"><summary>{text.menu}</summary><Navigation lang={lang} model={model} path={path}/></details>
+    <dialog id="mobile-navigation" class="mobile-drawer" aria-label={text.menu}><button class="btn drawer-close" type="button" data-close-menu>{text.close} <span aria-hidden="true">×</span></button><Navigation lang={lang} model={model} path={path}/></dialog>
+    <main id="main" tabindex="-1" class="reading-column" transition:name="reading" transition:animate={readingTransition}>
+      <p id="translation-missing" class:list={['translation-notice', { 'is-visible': translationMissing }]} role="status" data-translation-notice>{text.missingTranslation}</p>
+      <slot />
+    </main>
+    <footer class="page-footer"><span>Arda's Blog</span><a href={withBase(`/${lang}/rss.xml`)}>{text.rss} ↗</a></footer>
+  </div>
+  <script>import '../scripts/client';</script>
+</body>
+</html>

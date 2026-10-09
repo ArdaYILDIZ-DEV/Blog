@@ -1,0 +1,77 @@
+name: Validate and publish
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install
+        run: npm ci --no-audit --no-fund
+      - name: Type and model checks
+        run: npm run check && npm test
+      - name: Discovery and configuration tests
+        run: npm run test:discovery
+      - name: Validate browser navigation
+        run: |
+          npx playwright install --with-deps chromium
+          SITE_URL=http://localhost:4321 BASE_PATH=/Blog npm run build
+          BASE_PATH=/Blog npm run test:browser
+      - name: Read Pages metadata
+        id: pages
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@v6
+        with:
+          enablement: false
+      - name: Build final artifact
+        env:
+          PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}
+          PAGES_BASE: ${{ steps.pages.outputs.base_path }}
+          CUSTOM_SITE: ${{ vars.SITE_URL }}
+          CUSTOM_BASE: ${{ vars.BASE_PATH }}
+          IS_PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        run: |
+          if [ "$IS_PUBLISH" = "true" ]; then
+            export SITE_URL="${CUSTOM_SITE:-$PAGES_ORIGIN}"
+            test -n "$SITE_URL" || { echo 'Missing Pages origin or SITE_URL'; exit 1; }
+            if [ -n "$CUSTOM_SITE" ]; then
+              export BASE_PATH="${CUSTOM_BASE:-/}"
+            else
+              export BASE_PATH="${CUSTOM_BASE:-${PAGES_BASE:-/}}"
+            fi
+          else
+            export SITE_URL=http://localhost:4321 BASE_PATH=/Blog
+          fi
+          npm run build
+          npm run test:output
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

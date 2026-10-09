@@ -1,0 +1,5 @@
+---
+import Base from '../layouts/Base.astro';
+import { withBase } from '../lib/urls';
+---
+<Base lang="en" title="404 — Page not found / Sayfa bulunamadı" path="/404.html"><section><p class="eyebrow">404</p><h1>Page not found<br/>Sayfa bulunamadı</h1><p>The page may have moved. / Sayfa taşınmış olabilir.</p><p><a href={withBase('/tr/')} lang="tr">Türkçe ana sayfa</a> · <a href={withBase('/en/')} lang="en">English home</a></p></section></Base>

@@ -1,0 +1,18 @@
+---
+import { withBase, absoluteUrl } from '../lib/urls';
+const tr = withBase('/tr/');
+const en = withBase('/en/');
+---
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Arda's Blog — Choose a language</title><meta name="description" content="Arda's Blog: Türkçe ve İngilizce yazılar / Articles in Turkish and English."/><link rel="canonical" href={absoluteUrl('/', Astro.site!.origin)}/><link rel="alternate" hreflang="tr" href={absoluteUrl('/tr/', Astro.site!.origin)}/><link rel="alternate" hreflang="en" href={absoluteUrl('/en/', Astro.site!.origin)}/><link rel="alternate" hreflang="x-default" href={absoluteUrl('/', Astro.site!.origin)}/></head>
+<body><main><h1>Arda's Blog</h1><p>Bir dil seçin / Choose a language</p><nav aria-label="Language"><a href={tr} lang="tr">Türkçe</a><a href={en} lang="en">English</a></nav></main>
+<script is:inline define:vars={{ tr, en }}>
+(() => {
+  let saved; try { saved = localStorage.getItem('blog-language'); } catch { /* A blocked store must not prevent navigation. */ }
+  let lang = saved === 'tr' || saved === 'en' ? saved : undefined;
+  if (!lang) for (const value of navigator.languages || [navigator.language]) { const candidate = value.toLowerCase().split('-')[0]; if (candidate === 'tr' || candidate === 'en') { lang = candidate; break; } }
+  location.replace(lang === 'tr' ? tr : en);
+})();
+</script>
+<style>body{margin:0;background:#10100e;color:#e8e4db;font:18px system-ui}main{max-width:40rem;margin:15vh auto;padding:2rem}h1{font:3rem Georgia,serif}nav{display:flex;gap:2rem}a{color:#c9a96e;text-underline-offset:5px}a:focus-visible{outline:2px solid currentColor;outline-offset:5px}</style>
+</body></html>

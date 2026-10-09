@@ -1,0 +1,9 @@
+---
+import type { Post } from '../lib/model';
+import { t, type Lang } from '../lib/i18n';
+import { withBase } from '../lib/urls';
+interface Props { posts: Post[]; lang: Lang; }
+const { posts, lang } = Astro.props;
+const text = t(lang);
+---
+{posts.length ? <ol class="post-list">{posts.map((post) => <li><article class="post-preview"><div class="post-meta"><span>{post.categoryLabels.join(' / ') || text.allPosts}</span>{post.date && <time datetime={post.date.toISOString()}>{new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', year: 'numeric' }).format(post.date)}</time>}</div><h2><a href={withBase(post.path)} data-astro-prefetch>{post.title}</a></h2><p>{post.description}</p><div class="post-preview-bottom"><span class="preview-tags">{post.tags.slice(0, 3).map((tag) => <span>#{tag}</span>)}</span><a class="read-link" href={withBase(post.path)}>{text.readMore}<span aria-hidden="true"> →</span></a></div></article></li>)}</ol> : <p class="empty-state">{text.empty}</p>}
