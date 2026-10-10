@@ -254,6 +254,41 @@ function initialize(): void {
   const notice = document.querySelector<HTMLElement>('[data-translation-notice]');
   if (notice && new URLSearchParams(location.search).get('translation') === 'missing') notice.classList.add('is-visible');
   enhanceMarkdown();
+  setupTocObserver();
+  updateReadingProgress();
   void setupSearch();
+}
+function updateReadingProgress(): void {
+  const bar = document.querySelector<HTMLElement>('#reading-progress');
+  if (!bar || window.CSS?.supports?.('animation-timeline', 'scroll()')) return;
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+  bar.style.transform = `scaleX(${progress})`;
+}
+window.addEventListener('scroll', updateReadingProgress, { passive: true });
+
+let tocObserver: IntersectionObserver | undefined;
+function setupTocObserver(): void {
+  tocObserver?.disconnect();
+  const tocLinks = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
+  if (!tocLinks.length) return;
+  const headings = tocLinks.map((link) => {
+    const href = link.getAttribute('href');
+    const id = href && href.startsWith('#') ? href.slice(1) : null;
+    return id ? document.getElementById(id) : null;
+  }).filter((el): el is HTMLElement => Boolean(el));
+  if (!headings.length) return;
+  tocObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        for (const link of tocLinks) {
+          if (link.getAttribute('href') === `#${id}`) link.setAttribute('aria-current', 'true');
+          else link.removeAttribute('aria-current');
+        }
+      }
+    }
+  }, { rootMargin: '0px 0px -65% 0px' });
+  for (const heading of headings) tocObserver.observe(heading);
 }
 document.addEventListener('astro:page-load', initialize);

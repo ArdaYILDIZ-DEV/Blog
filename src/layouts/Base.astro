@@ -49,6 +49,7 @@ const readingTransition = { forwards: readingAnimation, backwards: readingAnimat
   <ClientRouter />
 </head>
 <body data-copy={text.copy} data-copied={text.copied} data-copy-failed={text.copyFailed}>
+  <div id="reading-progress" class="reading-progress-bar" aria-hidden="true"></div>
   <a class="skip-link" href="#main">{text.skip}</a>
   <aside class="desktop-sidebar" transition:name="sidebar" transition:animate="none"><Navigation lang={lang} model={model} path={path}/></aside>
   <div class="site-content">
@@ -64,7 +65,7 @@ const readingTransition = { forwards: readingAnimation, backwards: readingAnimat
     </header>
     {missing && path !== '/' && <p class="translation-hint">{text.missingTranslation} <span>{lang === 'tr' ? 'Dil bağlantısı ana sayfaya gider.' : 'The language link opens the home page.'}</span></p>}
     <details class="mobile-fallback"><summary>{text.menu}</summary><Navigation lang={lang} model={model} path={path}/></details>
-    <dialog id="mobile-navigation" class="mobile-drawer" aria-label={text.menu}><button class="btn drawer-close" type="button" data-close-menu>{text.close} <span aria-hidden="true">×</span></button><Navigation lang={lang} model={model} path={path}/></dialog>
+    <dialog id="mobile-navigation" class="mobile-drawer" aria-label={text.menu}><button class="btn drawer-close" type="button" data-close-menu>{text.close} <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button><Navigation lang={lang} model={model} path={path}/></dialog>
     <main id="main" tabindex="-1" class="reading-column" transition:name="reading" transition:animate={readingTransition}>
       <p id="translation-missing" class:list={['translation-notice', { 'is-visible': translationMissing }]} role="status" data-translation-notice>{text.missingTranslation}</p>
       <slot />

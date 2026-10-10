@@ -258,6 +258,7 @@ test('drawer opens and closes with a short transition and restores keyboard focu
   const drawer = page.locator('#mobile-navigation');
   await trigger.click();
   await expect(drawer).toHaveCSS('opacity', '1');
+  await page.screenshot({ path: 'test-results/drawer-open.png' });
   await expect(drawer).toHaveCSS('transition-duration', '0.24s, 0.24s, 0.24s, 0.24s');
   await page.keyboard.press('Escape');
   await expect(drawer).toBeHidden();
@@ -316,7 +317,11 @@ for (const width of [390, 900, 1100, 1440]) test(`home refinement: purposeful li
   }
   if (width > 700) expect(searchBox!.x + searchBox!.width).toBeLessThan(preferencesBox!.x);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.locator('[data-focus-search]').click(); await expect(page.locator('[data-search-input]')).toBeFocused();
+  if (width > 700) {
+    await page.locator('[data-focus-search]').click(); await expect(page.locator('[data-search-input]')).toBeFocused();
+  } else {
+    await expect(page.locator('[data-focus-search]')).toBeHidden();
+  }
   await page.screenshot({ path: `test-results/home-refined-${width}.png`, fullPage: true });
 });
 
@@ -399,6 +404,7 @@ test('design regression: animated theme menu supports keyboard, dismissal and pe
   await trigger.click(); await page.locator('[data-theme-option="system"]').click();
   expect(await page.evaluate(() => localStorage.getItem('blog-theme'))).toBe('system');
   await page.locator('[data-language="en"]').click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('[data-theme-trigger]')).toContainText('System');
   await page.locator('[data-theme-trigger]').click();
   await expect(page.locator('#theme-options')).toBeVisible();
