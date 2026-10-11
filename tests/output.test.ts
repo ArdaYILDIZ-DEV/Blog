@@ -36,7 +36,7 @@ test('drafts are absent from every text output and language search contains full
   }
   const tr = JSON.parse(await read('tr/search-index.json'));
   const en = JSON.parse(await read('en/search-index.json'));
-  assert.equal(tr.length, 2); assert.equal(en.length, 2);
+  assert.equal(tr.length, 3); assert.equal(en.length, 3);
   assert.ok(tr.some((post: { body: string }) => post.body.includes('Doğrulama')));
   assert.ok(en.some((post: { body: string }) => post.body.includes('Verification')));
   for (const post of [...tr, ...en]) { assert.ok(post.path.startsWith(`${base}/`)); assert.doesNotMatch(post.body, /<[^>]+>/); }
@@ -49,7 +49,7 @@ test('RSS excludes undated notes and sitemap enumerates published routes', async
   assert.ok(en.includes(`<link>${site}${base}/en/</link>`));
   assert.doesNotMatch(tr, /<item>/); assert.doesNotMatch(en, /<item>/);
   const sitemap = await read('sitemap.xml');
-  for (const path of [trArticle, enArticle, '/tr/notes/markdown-test/', '/en/notes/reading/', '/tr/tags/', '/en/tags/', '/tr/notes/', '/en/notes/']) {
+  for (const path of [trArticle, enArticle, '/tr/notes/markdown-test/', '/en/notes/reading/', '/tr/notes/ikinci-beyin/', '/en/notes/obsidian-vault/', '/tr/tags/', '/en/tags/', '/tr/notes/', '/en/notes/']) {
     assert.ok(sitemap.includes(`<loc>${site}${base}${path}</loc>`), path);
   }
   assert.ok(!sitemap.includes('/taslak/'));
